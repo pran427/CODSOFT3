@@ -1,0 +1,176 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class QuizApp extends JFrame implements ActionListener {
+
+    // ✅ Quiz Data: {Question, Option1, Option2, Option3, Option4, CorrectOptionIndex}
+    String[][] questions = {
+        {"What is the capital of France?", "Berlin", "London", "Paris", "Madrid", "3"},
+        {"Which language is used for web apps?", "Python", "JavaScript", "Java", "All of the above", "4"},
+        {"What does CPU stand for?", "Central Process Unit", "Computer Personal Unit", "Central Processing Unit", "Central Processor Unit", "3"},
+        {"Which company developed Java?", "Apple", "Oracle", "Microsoft", "IBM", "2"},
+        {"HTML stands for?", "Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language", "Hyper Trainer Marking Language", "1"},
+        {"What is 2+2?", "3", "4", "5", "6", "2"},
+        {"Which is not an OOP concept?", "Encapsulation", "Inheritance", "Compilation", "Polymorphism", "3"},
+        {"Which of these is not a Java keyword?", "class", "void", "int", "define", "4"},
+        {"Which symbol is used for comments in Java?", "//", "/*", "#", "!!", "1"},
+        {"Which Java GUI toolkit are we using?", "JavaFX", "AWT", "Swing", "GTK", "3"}
+    };
+
+    // UI Components
+    JLabel titleLabel, questionLabel, timerLabel;
+    JRadioButton[] options = new JRadioButton[4];
+    ButtonGroup optionGroup;
+    JButton submitButton;
+    int currentQuestion = 0, score = 0, secondsLeft = 30;
+    Timer timer;
+    String[] userAnswers = new String[questions.length];
+
+    // Constructor
+    public QuizApp() {
+        // Frame Settings
+        setTitle("🧠 Java Quiz App");
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximize window
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(null);
+        getContentPane().setBackground(new Color(204, 153, 255)); // Lightish purple background
+
+        // Title
+        titleLabel = new JLabel("Java Quiz Challenge");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(500, 20, 400, 40);
+        add(titleLabel);
+
+        // Timer Label
+        timerLabel = new JLabel("Time left: 30");
+        timerLabel.setBounds(1150, 30, 150, 25);
+        timerLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        timerLabel.setForeground(Color.YELLOW);
+        add(timerLabel);
+
+        // Question Label
+        questionLabel = new JLabel();
+        questionLabel.setBounds(100, 100, 1000, 30);
+        questionLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        questionLabel.setForeground(Color.WHITE);
+        add(questionLabel);
+
+        // Options
+        optionGroup = new ButtonGroup();
+        int y = 160;
+        for (int i = 0; i < 4; i++) {
+            options[i] = new JRadioButton();
+            options[i].setBounds(120, y, 800, 30);
+            options[i].setFont(new Font("Arial", Font.PLAIN, 18));
+            options[i].setBackground(new Color(204, 153, 255));
+            options[i].setForeground(Color.WHITE);
+            optionGroup.add(options[i]);
+            add(options[i]);
+            y += 50;
+        }
+
+        // Submit Button
+        submitButton = new JButton("Submit Answer");
+        submitButton.setBounds(500, 400, 200, 45);
+        submitButton.setBackground(Color.YELLOW);
+        submitButton.setForeground(Color.BLACK);
+        submitButton.setFont(new Font("Arial", Font.BOLD, 16));
+        submitButton.addActionListener(this);
+        add(submitButton);
+
+        // Start Quiz
+        loadQuestion();
+        startTimer();
+
+        setVisible(true);
+    }
+
+    // Timer Logic
+    void startTimer() {
+        timer = new Timer(1000, e -> {
+            secondsLeft--;
+            timerLabel.setText("Time left: " + secondsLeft);
+            if (secondsLeft <= 0) {
+                timer.stop();
+                submitAnswer(true); // Auto-submit
+            }
+        });
+        timer.start();
+    }
+
+    // Load Question
+    void loadQuestion() {
+        if (currentQuestion < questions.length) {
+            questionLabel.setText("Q" + (currentQuestion + 1) + ": " + questions[currentQuestion][0]);
+            for (int i = 0; i < 4; i++) {
+                options[i].setText(questions[currentQuestion][i + 1]);
+                options[i].setSelected(false);
+            }
+            secondsLeft = 30;
+            timerLabel.setText("Time left: 30");
+            if (timer != null) timer.start();
+        } else {
+            showResult();
+        }
+    }
+
+    // Submit Answer
+    public void actionPerformed(ActionEvent e) {
+        submitAnswer(false);
+    }
+
+    void submitAnswer(boolean autoSubmit) {
+        timer.stop();
+        String selectedAnswer = "No Answer";
+        for (int i = 0; i < 4; i++) {
+            if (options[i].isSelected()) {
+                selectedAnswer = options[i].getText();
+            }
+        }
+
+        userAnswers[currentQuestion] = selectedAnswer;
+        String correctAnswer = questions[currentQuestion][Integer.parseInt(questions[currentQuestion][5])];
+
+        if (selectedAnswer.equals(correctAnswer)) {
+            score++;
+        }
+
+        currentQuestion++;
+        loadQuestion();
+    }
+
+    // Show Results
+    void showResult() {
+        JFrame resultFrame = new JFrame("🎉 Quiz Result");
+        resultFrame.setSize(800, 600);
+        resultFrame.setLayout(new BorderLayout());
+        resultFrame.setLocationRelativeTo(null);
+
+        JTextArea resultText = new JTextArea();
+        resultText.setEditable(false);
+        resultText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        resultText.setBackground(Color.WHITE);
+
+        resultText.append("🎯 Your Score: " + score + "/" + questions.length + "\n\n");
+
+        for (int i = 0; i < questions.length; i++) {
+            resultText.append("Q" + (i + 1) + ": " + questions[i][0] + "\n");
+            resultText.append("Your Answer   : " + userAnswers[i] + "\n");
+            resultText.append("Correct Answer: " + questions[i][Integer.parseInt(questions[i][5])] + "\n\n");
+        }
+
+        JScrollPane scrollPane = new JScrollPane(resultText);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        resultFrame.add(scrollPane, BorderLayout.CENTER);
+
+        resultFrame.setVisible(true);
+        this.dispose(); // Close quiz window
+    }
+
+    // Main Method
+    public static void main(String[] args) {
+        new QuizApp();
+    }
+}
